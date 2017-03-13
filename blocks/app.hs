@@ -3,6 +3,7 @@ module Main where
 import           Control.Monad
 
 import           Data.List
+import           Data.Functor
 import           Debug.Trace
 
 import           Prelude hiding (readList)
@@ -13,8 +14,27 @@ debugEnabled :: Bool
 debugEnabled = False
 ---------------------- 
 
+-- Sample input
+{---------------------- 
+1
+3 1
+..*
+0 0
+1 1 1
+ ----------------------} 
+
 main :: IO ()
-main = putStrLn "Hello"
+main = run
+
+runTestCase :: IO ()
+runTestCase = do 
+  dim <- readDim
+  print dim
+
+readDim :: IO (Int, Int)
+readDim = do
+  (x:y:_) <- readNumbers
+  return (x, y) 
 
 data VeldType = DOEL | OK | X deriving (Show, Eq)
 
@@ -106,6 +126,19 @@ isBuiten blok veld@(Veld speelveld)
 
 --------------------------------------------------------------------------------
                         -- Generally useful functions --
+
+run :: IO ()
+run = do
+  n <- readTestCases
+  replicateM_ n runTestCase
+
+-- Read a list of numbers on the input line
+readNumbers :: IO [Int]
+readNumbers = map read . words <$> getLine
+
+-- Read number of testcases
+readTestCases :: IO Int
+readTestCases = readLn
 
 -- Input format: length of list, followed by list values, each on own line.
 readList :: IO [Int]
