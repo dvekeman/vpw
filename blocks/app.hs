@@ -5,6 +5,8 @@ import           Control.Monad
 import           Data.List
 import           Data.Functor
 import           Debug.Trace
+import           System.IO.Unsafe (unsafePerformIO)
+import           Control.Concurrent (threadDelay)
 
 import           Prelude hiding (readList)
 
@@ -24,17 +26,33 @@ debugEnabled = False
  ----------------------} 
 
 main :: IO ()
-main = run
+main = runCases
 
-runTestCase :: IO ()
-runTestCase = do 
-  dim <- readDim
-  print dim
+readInput :: IO Case
+-- readInput = undefined
+readInput = do
+  (vx:vy:_)         <- readNumbers
+  field             <- times vy readFieldLine
+  (x':y':_)         <- readNumbers -- ^ (x, y) co van de blok
+  (bx: by: bz: _)   <- readNumbers -- ^ breedte, hoogte, diepte
+  
+  let veld = Veld field
+      blok = Blok x' y' bx by bz
+  debugM_ ("Het veld is " ++ show veld)
+  debugM_ ("De blok is " ++ show blok)
+  
+  return $ Case veld blok
+
+runAlgo :: (Int, Case) -> IO ()
+-- runAlgo (i, (Case ...)) = do
+runAlgo (i, (Case veld blok)) = do
+  threadDelay $ 10 * 1000 * 1000
+  printLn i "Result"
 
 readDim :: IO (Int, Int)
 readDim = do
-  (x:y:_) <- readNumbers
-  return (x, y) 
+  (x':y':_) <- readNumbers
+  return (x', y') 
 
 data VeldType = DOEL | OK | X deriving (Show, Eq)
 
@@ -45,9 +63,19 @@ data Blok = Blok {
  , breedte :: Int
  , hoogte  :: Int
  , diepte  :: Int
-} deriving Show
+} deriving (Show, Eq)
 
 newtype Veld = Veld [[VeldType]] deriving (Show, Eq)
+
+data Case = Case Veld Blok
+
+parseVeldType :: Char -> VeldType
+parseVeldType 'x' = X
+parseVeldType '.' = OK
+parseVeldType '*' = DOEL
+
+readFieldLine :: IO [VeldType]
+readFieldLine = map parseVeldType <$> getLine
 
 kantel :: Blok -> [Blok]
 kantel blok = [kantel1 blok, kantel2 blok, kantel3 blok, kantel4 blok]
@@ -62,6 +90,7 @@ kantel1 blok = blok {
   , hoogte = diepte blok
   , diepte = hoogte blok
 }
+front = kantel1
 
 -- kantel naar links
 kantel2 :: Blok -> Blok
@@ -73,6 +102,7 @@ kantel2 blok = blok {
   , diepte = diepte blok
   , hoogte = breedte blok
 }
+left = kantel2
 
 -- kantel naar achter
 kantel3 :: Blok -> Blok
@@ -84,6 +114,7 @@ kantel3 blok = blok {
   , hoogte = diepte blok
   , diepte = hoogte blok
 }
+back = kantel3
 
 -- kantel naar rechts
 kantel4 :: Blok -> Blok
@@ -95,22 +126,23 @@ kantel4 blok = blok {
   , hoogte = breedte blok
   , diepte = diepte blok
 }
+right = kantel4
 
 isBuiten :: Blok -> Veld -> Bool
-isBuiten blok veld@(Veld speelveld) 
-  | x blok < 0 = 
+isBuiten blok veld@(Veld speelveld)
+  | x blok < 0 =
     debug "x < 0"
-    True 
-  | y blok < 0 = 
-    debug "y < 0" 
     True
-  | x blok + breedte blok > length (head speelveld) = 
-    debug "te lang" 
+  | y blok < 0 =
+    debug "y < 0"
     True
-  | y blok + diepte blok > length speelveld = 
-    debug "te diep" 
+  | x blok + breedte blok > length (head speelveld) =
+    debug "te lang"
     True
-  | otherwise = 
+  | y blok + diepte blok > length speelveld =
+    debug "te diep"
+    True
+  | otherwise =
       let results = map (isBuitenVeld . moveY) [0..diepte blok - 1]
       --                 ^^^^^^^^^^^^^^^^^^^^ -- we checken rij per rij. We schuiven y-co op met 0, 1, ... diepte blok - 1
                 where moveY i = blok { y = y blok + i }
@@ -127,10 +159,14 @@ isBuiten blok veld@(Veld speelveld)
 --------------------------------------------------------------------------------
                         -- Generally useful functions --
 
-run :: IO ()
-run = do
-  n <- readTestCases
-  replicateM_ n runTestCase
+runCases :: IO ()
+runCases = do
+  total     <- readLn :: IO Int
+  allInput  <- times total readInput
+  mapM_ runAlgo $ zip [1..total] allInput
+  -- times_ total runCase
+  -- times total runCase
+  -- mapM_ printLn $ addLineNr allResults
 
 -- Read a list of numbers on the input line
 readNumbers :: IO [Int]
@@ -155,10 +191,36 @@ readLists = flip replicateM readList
 -- Working alternative:
 -- readLists n = sequence $ replicate n readList
 
+-- Add a line number to each element: (1, ..), (2, ..)
+-- addLineNr :: [a] -> [(Int, a)]
+-- addLineNr = zip [1..]
+
+-- Format the line and print it
+-- printLn :: (Int, (Int, Int)) -> IO ()
+printLn ln d = putStrLn $ fmtLn ln d
+
+fmtLn :: Int -> String -> String
+fmtLn ln d = show ln ++ " " ++ d
+
 debug :: String -> a -> a
 debug text a
   | debugEnabled = trace text a
   | otherwise    = a
+
+debugM :: (Monad m) => String -> a -> m a
+debugM text a = return $ debug text a
+
+debug_ :: String -> String
+debug_ text = debug text ""
+
+debugM_ :: (Monad m) => String -> m String
+debugM_ text = debugM text ""
+
+times :: Monad m => Int -> m a -> m [a]
+times = replicateM
+
+times_ :: Monad m => Int -> m a -> m ()
+times_ = replicateM_
 
 --------------------------------------------------------------------------------
 
@@ -192,7 +254,7 @@ blok3 = -- Blok (1, 1) 4 1 100
     , diepte  = 100
   }
 
-veld = Veld [[X, X, X], [OK, DOEL, OK]]
+veld1 = Veld [[X, X, X], [OK, DOEL, OK]]
 
 blok4 = -- Blok (3, 4) 2 10 3
   Blok {
@@ -228,7 +290,7 @@ blok7 = -- Blok (1, 1) 2 2 2
     , diepte  = 2
   }
 
-veld2 = Veld 
+veld2 = Veld
   [
      [X, X, X, X, X, X]
   ,  [X, X, X, X, X, X]
