@@ -1,11 +1,18 @@
-# For advanced use and comprehensive documentation of the format, please see:
-# http://docs.haskellstack.org/en/stable/yaml_configuration/
-
-resolver: ghc-7.8.3
-# resolver: ghc-7.10.3
-
+flags:
+  semigroups:
+    bytestring-builder: false
+extra-package-dbs: []
 packages:
 - '.'
-extra-deps: []
-flags: {}
-extra-package-dbs: []
+extra-deps:
+- QuickCheck-2.9.2
+- hashable-1.2.5.0
+- primitive-0.6.2.0
+- random-1.1
+- semigroups-0.18.2
+- tagged-0.8.5
+- text-1.2.2.1
+- tf-random-0.5
+- transformers-compat-0.5.1.4
+- unordered-containers-0.2.7.2
+resolver: ghc-7.10.3

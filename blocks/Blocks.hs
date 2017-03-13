@@ -1,4 +1,4 @@
-module Main where
+module Blocks where
 
 import           Control.Monad
 
@@ -13,8 +13,9 @@ debugEnabled :: Bool
 debugEnabled = False
 ---------------------- 
 
-main :: IO ()
-main = putStrLn "Hello"
+-- TODO: English or Dutch?
+-- main :: IO ()
+-- main = runOpgave
 
 data VeldType = DOEL | OK | X deriving (Show, Eq)
 
@@ -25,9 +26,33 @@ data Blok = Blok {
  , breedte :: Int
  , hoogte  :: Int
  , diepte  :: Int
-} deriving Show
+} deriving (Show, Eq)
 
 newtype Veld = Veld [[VeldType]] deriving (Show, Eq)
+
+parseVeldType 'x' = X
+parseVeldType '.' = OK
+parseVeldType '*' = DOEL
+
+runOpgave = do
+  total <- readLn :: IO Int
+  times total runCase
+  putStrLn "Done"
+
+runCase = do
+  (vx:vy:_)         <- readNumbers
+  field             <- times vy readFieldLine
+  (x:y:_)           <- readNumbers -- ^ (x, y) co van de blok
+  (bx: by: bz: _)   <- readNumbers -- ^ breedte, hoogte, diepte
+  let veld = Veld field
+      blok = Blok x y bx by bz
+  debugM_ ("Het veld is " ++ show veld)
+  debugM_ ("De blok is " ++ show blok)
+  -- TODO: run algo with veld en blok
+  putStrLn ""
+
+readFieldLine :: IO [VeldType]
+readFieldLine = map parseVeldType <$> getLine
 
 kantel :: Blok -> [Blok]
 kantel blok = [kantel1 blok, kantel2 blok, kantel3 blok, kantel4 blok]
@@ -42,6 +67,7 @@ kantel1 blok = blok {
   , hoogte = diepte blok
   , diepte = hoogte blok
 }
+front = kantel1
 
 -- kantel naar links
 kantel2 :: Blok -> Blok
@@ -53,6 +79,7 @@ kantel2 blok = blok {
   , diepte = diepte blok
   , hoogte = breedte blok
 }
+left = kantel2
 
 -- kantel naar achter
 kantel3 :: Blok -> Blok
@@ -64,6 +91,7 @@ kantel3 blok = blok {
   , hoogte = diepte blok
   , diepte = hoogte blok
 }
+back = kantel3
 
 -- kantel naar rechts
 kantel4 :: Blok -> Blok
@@ -75,6 +103,7 @@ kantel4 blok = blok {
   , hoogte = breedte blok
   , diepte = diepte blok
 }
+right = kantel4
 
 isBuiten :: Blok -> Veld -> Bool
 isBuiten blok veld@(Veld speelveld) 
@@ -126,6 +155,20 @@ debug :: String -> a -> a
 debug text a
   | debugEnabled = trace text a
   | otherwise    = a
+
+debugM :: (Monad m) => String -> a -> m a
+debugM text a = return $ debug text a
+
+debug_ :: String -> String
+debug_ text = debug text ""
+
+debugM_ :: (Monad m) => String -> m String
+debugM_ text = debugM text ""
+
+readNumbers :: IO [Int]
+readNumbers = (map read) . words <$> getLine
+
+times = replicateM
 
 --------------------------------------------------------------------------------
 

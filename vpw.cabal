@@ -13,6 +13,14 @@ build-type:          Simple
 extra-source-files:  README.md
 cabal-version:       >=1.10
 
+library
+  hs-source-dirs:      blocks
+  ghc-options:         -Wall -O2
+  exposed-modules:     Blocks
+  other-modules:
+  build-depends:       base
+  default-language:    Haskell2010
+
 -- ghc-options:         -threaded -rtsopts -with-rtsopts=-N
 executable app1-exe
   hs-source-dirs:      app1
@@ -23,9 +31,19 @@ executable app1-exe
 
 executable blocks-exe
   hs-source-dirs:      blocks
-  main-is:             app.hs
+  main-is:             Blocks.hs
   ghc-options:         -Wall -O2
   build-depends:       base
+                     , vpw
+  default-language:    Haskell2010
+test-suite blocks-test
+  type:                exitcode-stdio-1.0
+  hs-source-dirs:      blocks-test
+  main-is:             Spec.hs
+  build-depends:       base
+                     , vpw
+                     , QuickCheck
+  ghc-options:         -threaded -rtsopts -with-rtsopts=-N
   default-language:    Haskell2010
 
 executable minmax1-exe
@@ -61,6 +79,7 @@ executable minmax2-exe
 --  ghc-options:         -Wall -O2
 --  build-depends:       base
 --  default-language:    Haskell2010
+
 
 source-repository head
   type:     git
