@@ -33,7 +33,7 @@ data X = X {
   , y1 :: Int
 } deriving (Show, Read, Eq)
 
-newtype Y = Veld [[VeldType]] 
+newtype Y = Veld [[X]] 
   deriving (Show, Read, Eq)
 
 data Case = Case X Y
