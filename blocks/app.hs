@@ -13,7 +13,7 @@ import           Prelude hiding (readList)
 -- Keep me at the top
 ---------------------- 
 debugEnabled :: Bool
-debugEnabled = False
+debugEnabled = True
 ---------------------- 
 
 -- Sample input
@@ -45,8 +45,8 @@ readInput = do
 
 runAlgo :: (Int, Case) -> IO ()
 -- runAlgo (i, (Case ...)) = do
-runAlgo (i, (Case veld blok)) = do
-  threadDelay $ 10 * 1000 * 1000
+runAlgo (i, Case veld blok) = do
+  threadDelay $ 2 * 1000 * 1000
   printLn i "Result"
 
 readDim :: IO (Int, Int)
@@ -70,9 +70,9 @@ newtype Veld = Veld [[VeldType]] deriving (Show, Eq)
 data Case = Case Veld Blok
 
 parseVeldType :: Char -> VeldType
-parseVeldType 'x' = X
-parseVeldType '.' = OK
-parseVeldType '*' = DOEL
+parseVeldType 'x' = debug "Found x" X
+parseVeldType '.' = debug "Found ." OK
+parseVeldType '*' = debug "Found *" DOEL
 
 readFieldLine :: IO [VeldType]
 readFieldLine = map parseVeldType <$> getLine
@@ -207,14 +207,18 @@ debug text a
   | debugEnabled = trace text a
   | otherwise    = a
 
-debugM :: (Monad m) => String -> a -> m a
-debugM text a = return $ debug text a
+debugM :: String -> a -> IO a
+debugM text a 
+  | debugEnabled = do 
+      putStrLn text
+      return a
+  | otherwise    = return a
 
 debug_ :: String -> String
 debug_ text = debug text ""
 
-debugM_ :: (Monad m) => String -> m String
-debugM_ text = debugM text ""
+debugM_ :: String -> IO ()
+debugM_ text = debugM text ()
 
 times :: Monad m => Int -> m a -> m [a]
 times = replicateM
@@ -224,77 +228,3 @@ times_ = replicateM_
 
 --------------------------------------------------------------------------------
 
---------------------------------------------------------------------------------
-                        -- Test data --
-
-blok1 = -- Blok (-1, 1) 2 1 100
-  Blok {
-      x = -1
-    , y = 1
-    , breedte = 2
-    , hoogte  = 1
-    , diepte  = 100
-  }
-
-blok2 = -- Blok (1, 1) 2 1 100
-  Blok {
-      x = 1
-    , y = 1
-    , breedte = 2
-    , hoogte  = 1
-    , diepte  = 100
-  }
-
-blok3 = -- Blok (1, 1) 4 1 100
-  Blok {
-      x = 1
-    , y = 1
-    , breedte = 4
-    , hoogte  = 1
-    , diepte  = 100
-  }
-
-veld1 = Veld [[X, X, X], [OK, DOEL, OK]]
-
-blok4 = -- Blok (3, 4) 2 10 3
-  Blok {
-      x = 3
-    , y = 4
-    , breedte = 2
-    , hoogte  = 10
-    , diepte  = 3
-  }
-blok5 = -- Blok (3, 4) 2 10 1
-  Blok {
-      x = 3
-    , y = 4
-    , breedte = 2
-    , hoogte  = 10
-    , diepte  = 1
-  }
-blok6 = -- Blok (3, 2) 2 2 2
-  Blok {
-      x = 3
-    , y = 2
-    , breedte = 2
-    , hoogte  = 2
-    , diepte  = 2
-  }
-
-blok7 = -- Blok (1, 1) 2 2 2
-  Blok {
-      x = 1
-    , y = 1
-    , breedte = 2
-    , hoogte  = 2
-    , diepte  = 2
-  }
-
-veld2 = Veld
-  [
-     [X, X, X, X, X, X]
-  ,  [X, X, X, X, X, X]
-  ,  [X, X, X, X, X, X]
-  ,  [OK, OK, OK, OK, OK]
-  ,  [OK, OK, OK, OK, OK]
-  ]
